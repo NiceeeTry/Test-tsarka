@@ -6,10 +6,10 @@ import (
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
+	// if r.Method != http.MethodPost {
+	// 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	// 	return
+	// }
 	var input struct {
 		Text string `json:"text"`
 	}
@@ -27,10 +27,10 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) emailHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
+	// if r.Method != http.MethodPost {
+	// 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	// 	return
+	// }
 	var input struct {
 		Email string
 	}
@@ -43,4 +43,22 @@ func (app *application) emailHandler(w http.ResponseWriter, r *http.Request) {
 	emails := app.emailFinder(input.Email)
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"Result": emails}, nil)
+}
+
+func (app *application) addHandler(w http.ResponseWriter, r *http.Request) {
+	// if r.Method != http.MethodPost {
+	// 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	// 	return
+	// }
+	// num, err := strconv.Atoi(r.URL.Query().Get("i"))
+	// if err != nil {
+	// 	http.NotFound(w, r)
+	// 	return
+	// }
+	i, err := app.readIDParam(r)
+	if err != nil {
+		http.Error(w, "Internal", 500)
+		return
+	}
+	fmt.Fprintf(w, "Display a specific snippet with ID %d...", i)
 }
