@@ -2,7 +2,6 @@ package sqlitedb
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type UserModel struct {
@@ -14,12 +13,15 @@ type User struct {
 	Surname string `json:"last_name"`
 }
 
-func (m UserModel) Insert(user *User) error {
+func (m UserModel) Insert(user *User) (int, error) {
 	query := `INSERT INTO users (name, surname) VALUES (?, ?)`
-	id, err := m.DB.Exec(query, user.Name, user.Surname)
+	res, err := m.DB.Exec(query, user.Name, user.Surname)
 	if err != nil {
-		return err
+		return -1, err
 	}
-	fmt.Println(id)
-	return nil
+	id, err := res.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+	return int(id), nil
 }

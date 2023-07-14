@@ -116,5 +116,11 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Name:    input.Name,
 		Surname: input.Surname,
 	}
-	err = app.models.Users.Insert(&user)
+	id, err := app.models.Users.Insert(&user)
+	if err != nil {
+		http.Error(w, "error in inserting user", 500)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"Created user id": id}, nil)
 }
