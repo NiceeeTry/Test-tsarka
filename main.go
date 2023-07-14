@@ -39,7 +39,7 @@ func main() {
 
 	err = createTables(db)
 	if err != nil {
-		errorLog.Fatal("error with db")
+		errorLog.Fatal(err)
 	}
 
 	app := &application{
@@ -75,8 +75,11 @@ func createTables(db *sql.DB) error {
 	stmt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS users 
 	(id INTEGER PRIMARY KEY,
 		name TEXT NOT NULL,
-		surname TEXT NOT NULL;`)
-	stmt.Exec()
+		surname TEXT NOT NULL);`)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec()
 	if err != nil {
 		return err
 	}
