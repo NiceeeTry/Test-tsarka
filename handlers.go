@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	sqlitedb "Alikhan.Aitbayev/internal/sqliteDB"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -98,4 +100,21 @@ func (app *application) valHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error")
 		return
 	}
+}
+
+func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Name    string `json:"first_name"`
+		Surname string `json:"last_name"`
+	}
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		http.Error(w, "internal", 500)
+		return
+	}
+	user := sqlitedb.User{
+		Name:    input.Name,
+		Surname: input.Surname,
+	}
+	err = app.models.Users.Insert(&user)
 }

@@ -13,5 +13,6 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/rest/counter/add/:i", app.addHandler)
 	router.HandlerFunc(http.MethodPost, "/rest/counter/sub/:i", app.subHandler)
 	router.HandlerFunc(http.MethodPost, "/rest/counter/val", app.valHandler)
+	router.HandlerFunc(http.MethodPost, "/rest/user", app.registerUserHandler)
 	return router
 }
