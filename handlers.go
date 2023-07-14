@@ -165,3 +165,14 @@ func (app *application) putUserHandler(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusNoContent, nil, nil)
 	// user, err := app.models.Users.Get(id)
 }
+
+func (app *application) deletetUserHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readParam(r, "id")
+	if err != nil {
+		http.Error(w, "Internal", 500)
+		return
+	}
+
+	err = app.models.Users.Delete(id)
+	app.writeJSON(w, http.StatusNoContent, nil, nil)
+}
