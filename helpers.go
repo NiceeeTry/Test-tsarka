@@ -1,33 +1,117 @@
 package main
 
-func LengthOfLongestSubstring(s string) int {
-	if len(s) == 1 {
-		return 1
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"regexp"
+	"strings"
+)
+
+type envelope map[string]interface{}
+
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+	maxBytes := 1_048_576
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(dst)
+
+	if err != nil {
+		var syntaxError *json.SyntaxError
+		var unmarshalTypeError *json.UnmarshalTypeError
+		var invalidUnmarshalError *json.InvalidUnmarshalError
+
+		switch {
+
+		case errors.As(err, &syntaxError):
+			return fmt.Errorf("body contains badly-formed JSON (at character %d)", syntaxError.Offset)
+		case errors.As(err, &unmarshalTypeError):
+			if unmarshalTypeError.Field != "" {
+				return fmt.Errorf("body contains incorrect JSON type for field %q", unmarshalTypeError.Field)
+			}
+			return fmt.Errorf("body contains incorrect JSON type (at character %d)", unmarshalTypeError.Offset)
+		case errors.Is(err, io.EOF):
+			return errors.New("body must not be empty")
+
+		case strings.HasPrefix(err.Error(), "json: unknown field "):
+			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+			return fmt.Errorf("body contains unknown key %s", fieldName)
+
+		case err.Error() == "http: request body too large":
+			return fmt.Errorf("body must not be larger than %d bytes", maxBytes)
+		case errors.As(err, &invalidUnmarshalError):
+			panic(err)
+		default:
+			return err
+		}
 	}
-	startMax := 0
-	endMax := 0
-	tmpStart := 0
-	tmpIndex := 0
-	for i := 1; i < len(s); i++ {
-		tmpIndex = -1
-		for j := tmpStart; j < i; j++ {
-			if s[j] == s[i] {
-				tmpIndex = j
-				break
+	err = dec.Decode(&struct{}{})
+	if err != io.EOF {
+		return errors.New("Body must only contain a single JSON value")
+
+	}
+	return nil
+}
+
+func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, header http.Header) error {
+	js, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+		return err
+	}
+	js = append(js, '\n')
+	for key, value := range header {
+		w.Header()[key] = value
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	w.Write(js)
+	return nil
+}
+
+// Task 1
+func (app *application) LongestSubstring(text string) string {
+	maxSubstring := ""
+	currentSubstring := ""
+
+	set := make(map[rune]bool)
+
+	for _, letter := range text {
+		if set[letter] {
+			for i, char := range currentSubstring {
+				if char == letter {
+					currentSubstring = currentSubstring[i+1:]
+					break
+				}
+				delete(set, char)
 			}
 		}
-		if tmpIndex >= 0 {
-			if (i - tmpStart - tmpIndex) > (endMax - startMax) {
-				startMax = tmpIndex
-				endMax = i
-			}
-			tmpStart = tmpIndex + 1
-		} else {
-			if (i - tmpStart + 1) > (endMax - startMax) {
-				startMax = tmpStart
-				endMax = i + 1
-			}
+
+		currentSubstring += string(letter)
+		set[letter] = true
+
+		if len(currentSubstring) > len(maxSubstring) {
+			maxSubstring = currentSubstring
 		}
 	}
-	return endMax - startMax
+
+	return maxSubstring
+}
+
+// Task 2
+func (app *application) emailFinder(emails string) []string {
+	regex := `Email:\s*([^\s@]+@[^\s@]+\.[^\s@]+)`
+	re := regexp.MustCompile(regex)
+	matches := re.FindAllStringSubmatch(emails, -1)
+
+	var checkedEmails []string
+
+	for _, match := range matches {
+		email := match[1]
+		checkedEmails = append(checkedEmails, email)
+
+	}
+	return checkedEmails
 }
