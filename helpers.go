@@ -103,6 +103,7 @@ func (app *application) LongestSubstring(text string) string {
 // Task 2
 func (app *application) emailFinder(emails string) []string {
 	regex := `Email:\s*([^\s@]+@[^\s@]+\.[^\s@]+)`
+	// /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
 	re := regexp.MustCompile(regex)
 	matches := re.FindAllStringSubmatch(emails, -1)
 
