@@ -37,3 +37,11 @@ func (m UserModel) Get(id int) (*User, error) {
 	}
 	return user, nil
 }
+func (m UserModel) Update(id int, user *User) error {
+	stmt := `UPDATE users SET name = ?, surname = ? WHERE id = ?`
+	_, err := m.DB.Exec(stmt, user.Name, user.Surname, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

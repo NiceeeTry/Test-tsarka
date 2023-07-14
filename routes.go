@@ -19,6 +19,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/rest/user", app.registerUserHandler)
 	router.HandlerFunc(http.MethodGet, "/rest/user/:id", app.getUserHandler)
+	router.HandlerFunc(http.MethodPut, "/rest/user/:id", app.putUserHandler)
 
 	return router
 }

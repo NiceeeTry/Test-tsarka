@@ -103,19 +103,20 @@ func (app *application) valHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		Name    string `json:"first_name"`
-		Surname string `json:"last_name"`
-	}
-	err := app.readJSON(w, r, &input)
+	// var input struct {
+	// 	Name    string `json:"first_name"`
+	// 	Surname string `json:"last_name"`
+	// }
+	user := sqlitedb.User{}
+	err := app.readJSON(w, r, &user)
 	if err != nil {
 		http.Error(w, "internal", 500)
 		return
 	}
-	user := sqlitedb.User{
-		Name:    input.Name,
-		Surname: input.Surname,
-	}
+	// user := sqlitedb.User{
+	// 	Name:    input.Name,
+	// 	Surname: input.Surname,
+	// }
 	id, err := app.models.Users.Insert(&user)
 	if err != nil {
 		http.Error(w, "error in inserting user", 500)
@@ -142,4 +143,25 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal", 500)
 		return
 	}
+}
+
+func (app *application) putUserHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readParam(r, "id")
+	if err != nil {
+		http.Error(w, "Internal", 500)
+		return
+	}
+	user := sqlitedb.User{}
+	err = app.readJSON(w, r, &user)
+	if err != nil {
+		http.Error(w, "internal", 500)
+		return
+	}
+	err = app.models.Users.Update(id, &user)
+	if err != nil {
+		http.Error(w, "internal", 500)
+		return
+	}
+	app.writeJSON(w, http.StatusNoContent, nil, nil)
+	// user, err := app.models.Users.Get(id)
 }
