@@ -48,13 +48,13 @@ func (app *application) emailHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) addHandler(w http.ResponseWriter, r *http.Request) {
-	i, err := app.readIParam(r)
+	i, err := app.readParam(r, "i")
 	if err != nil {
 		http.Error(w, "Internal", 500)
 		return
 	}
 
-	app.dbRedis.IncrBy("counter", i) //check errors
+	app.dbRedis.IncrBy("counter", int64(i)) //check errors
 	num, err := app.dbRedis.Get("counter").Int()
 	if err != nil {
 		fmt.Println("error")
@@ -68,7 +68,7 @@ func (app *application) addHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) subHandler(w http.ResponseWriter, r *http.Request) {
-	i, err := app.readIParam(r)
+	i, err := app.readParam(r, "i")
 	if err != nil {
 		http.Error(w, "Internal", 500)
 		return
@@ -76,7 +76,7 @@ func (app *application) subHandler(w http.ResponseWriter, r *http.Request) {
 	// ASK IF THE COUNTERS DROPS TO <0
 	// should we check if the counter exists?
 
-	app.dbRedis.DecrBy("counter", i) //check errors
+	app.dbRedis.DecrBy("counter", int64(i)) //check errors
 	num, err := app.dbRedis.Get("counter").Int()
 	if err != nil {
 		fmt.Println("error")
@@ -123,4 +123,23 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"Created user id": id}, nil)
+	if err != nil {
+		http.Error(w, "internal", 500)
+		return
+	}
+}
+
+func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readParam(r, "id")
+	if err != nil {
+		http.Error(w, "Internal", 500)
+		return
+	}
+	user, err := app.models.Users.Get(id)
+
+	app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
+	if err != nil {
+		http.Error(w, "internal", 500)
+		return
+	}
 }

@@ -25,3 +25,15 @@ func (m UserModel) Insert(user *User) (int, error) {
 	}
 	return int(id), nil
 }
+
+func (m UserModel) Get(id int) (*User, error) {
+	user := &User{}
+	stmt := `SELECT name, surname FROM users WHERE id = ?`
+
+	row := m.DB.QueryRow(stmt, id)
+	err := row.Scan(&user.Name, &user.Surname)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}

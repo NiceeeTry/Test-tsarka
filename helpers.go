@@ -120,11 +120,11 @@ func (app *application) emailFinder(emails string) []string {
 	return checkedEmails
 }
 
-func (app *application) readIParam(r *http.Request) (int64, error) {
+func (app *application) readParam(r *http.Request, paramName string) (int, error) {
 	params := httprouter.ParamsFromContext(r.Context())
-	i, err := strconv.ParseInt(params.ByName("i"), 10, 64)
+	i, err := strconv.ParseInt(params.ByName(paramName), 10, 64)
 	if err != nil {
 		return 0, errors.New("invalid i parameter")
 	}
-	return i, nil
+	return int(i), nil
 }
