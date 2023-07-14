@@ -19,6 +19,10 @@ func main() {
 	client := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
+	_, err := client.Ping().Result()
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
@@ -35,7 +39,7 @@ func main() {
 		Handler:  app.routes(),
 	}
 	infoLog.Println("Starting server on :8080")
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 
 }
