@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"database/sql"
@@ -8,56 +8,54 @@ import (
 
 	sqlitedb "Alikhan.Aitbayev/internal/sqliteDB"
 	"github.com/go-redis/redis"
-	_ "github.com/mattn/go-sqlite3"
 )
 
-// var client *redis.Client //Check on correctnes
 type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
+	ErrorLog *log.Logger
+	InfoLog  *log.Logger
 	dbRedis  *redis.Client
 	models   sqlitedb.Models
 }
 
-func main() {
-	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+func NewApplication() (*application, *sql.DB) {
+	InfoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	ErrorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	client := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
 	_, err := client.Ping().Result()
 	if err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		ErrorLog.Fatalf("Failed to connect to Redis: %v", err)
 	}
 
 	db, err := openDB()
 	if err != nil {
-		errorLog.Fatal(err)
+		ErrorLog.Fatal(err)
 	}
-	defer db.Close()
 
 	err = createTables(db)
 	if err != nil {
-		errorLog.Fatal(err)
+		ErrorLog.Fatal(err)
 	}
 
-	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
+	return &application{
+		ErrorLog: ErrorLog,
+		InfoLog:  InfoLog,
 		dbRedis:  client,
 		models:   sqlitedb.NewModels(db),
-	}
+	}, db
+}
 
+func (app *application) Run() error {
 	srv := &http.Server{
 		Addr:     ":8080",
-		ErrorLog: errorLog,
+		ErrorLog: app.ErrorLog,
 		Handler:  app.routes(),
 	}
-	infoLog.Println("Starting server on :8080")
-	err = srv.ListenAndServe()
-	errorLog.Fatal(err)
-
+	app.InfoLog.Println("Starting server on :8080")
+	err := srv.ListenAndServe()
+	return err
 }
 
 func openDB() (*sql.DB, error) {
