@@ -7,16 +7,18 @@ import (
 	"os"
 
 	"Alikhan.Aitbayev/Data"
+	sqlitedb "Alikhan.Aitbayev/Data/sqliteDB"
+	"Alikhan.Aitbayev/internal/helpers"
 	"github.com/go-redis/redis"
 )
 
-type application struct {
+type Application struct {
 	ErrorLog *log.Logger
 	InfoLog  *log.Logger
 	models   Data.Models
 }
 
-func NewApplication() (*application, *sql.DB) {
+func NewApplication() (*Application, *sql.DB) {
 	InfoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	ErrorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
@@ -33,19 +35,19 @@ func NewApplication() (*application, *sql.DB) {
 		ErrorLog.Fatal(err)
 	}
 
-	err = createTables(db)
+	err = sqlitedb.CreateTables(db)
 	if err != nil {
 		ErrorLog.Fatal(err)
 	}
 
-	return &application{
+	return &Application{
 		ErrorLog: ErrorLog,
 		InfoLog:  InfoLog,
 		models:   Data.NewModels(db, client),
 	}, db
 }
 
-func (app *application) Run() error {
+func (app *Application) Run() error {
 	srv := &http.Server{
 		Addr:     ":8080",
 		ErrorLog: app.ErrorLog,
@@ -67,17 +69,22 @@ func openDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func createTables(db *sql.DB) error {
-	stmt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS users 
-	(id INTEGER PRIMARY KEY,
-		name TEXT NOT NULL,
-		surname TEXT NOT NULL);`)
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+func (app *Application) readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+	return helpers.ReadJSON(w, r, dst)
+}
+
+func (app *Application) writeJSON(w http.ResponseWriter, status int, data helpers.Envelope, header http.Header) error {
+	return helpers.WriteJSON(w, status, data, header)
+}
+
+func (app *Application) longestSubstring(text string) string {
+	return helpers.LongestSubstring(text)
+}
+
+func (app *Application) emailFinder(emails string) []string {
+	return helpers.EmailFinder(emails)
+}
+
+func (app *Application) readParam(r *http.Request, paramName string) (int, error) {
+	return helpers.ReadParam(r, paramName)
 }

@@ -1,4 +1,4 @@
-package server
+package helpers
 
 import (
 	"encoding/json"
@@ -13,9 +13,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-type envelope map[string]interface{}
+type Envelope map[string]interface{}
 
-func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+func ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
@@ -59,7 +59,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst int
 	return nil
 }
 
-func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, header http.Header) error {
+func WriteJSON(w http.ResponseWriter, status int, data Envelope, header http.Header) error {
 	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 }
 
 // Task 1
-func (app *application) LongestSubstring(text string) string {
+func LongestSubstring(text string) string {
 	maxSubstring := ""
 	currentSubstring := ""
 
@@ -104,7 +104,7 @@ func (app *application) LongestSubstring(text string) string {
 }
 
 // Task 2
-func (app *application) emailFinder(emails string) []string {
+func EmailFinder(emails string) []string {
 	regex := `Email:\s*([^\s@]+@[^\s@]+\.[^\s@]+)`
 	// /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
 	re := regexp.MustCompile(regex)
@@ -120,11 +120,12 @@ func (app *application) emailFinder(emails string) []string {
 	return checkedEmails
 }
 
-func (app *application) readParam(r *http.Request, paramName string) (int, error) {
+func ReadParam(r *http.Request, paramName string) (int, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 	i, err := strconv.ParseInt(params.ByName(paramName), 10, 64)
+	text := fmt.Sprintf("invalid %s parameter", paramName)
 	if err != nil {
-		return 0, errors.New("invalid i parameter")
+		return 0, errors.New(text)
 	}
 	return int(i), nil
 }

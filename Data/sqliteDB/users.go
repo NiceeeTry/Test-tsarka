@@ -13,6 +13,21 @@ type User struct {
 	Surname string `json:"last_name"`
 }
 
+func CreateTables(db *sql.DB) error {
+	stmt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS users 
+	(id INTEGER PRIMARY KEY,
+		name TEXT NOT NULL,
+		surname TEXT NOT NULL);`)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m UserModel) Insert(user *User) (int, error) {
 	query := `INSERT INTO users (name, surname) VALUES (?, ?)`
 	res, err := m.DB.Exec(query, user.Name, user.Surname)

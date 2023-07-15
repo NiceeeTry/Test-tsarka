@@ -1,84 +1,87 @@
 package server
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	sqlitedb "Alikhan.Aitbayev/Data/sqliteDB"
+	"Alikhan.Aitbayev/internal/helpers"
 )
 
-func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	// if r.Method != http.MethodPost {
-	// 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-	// 	return
-	// }
+func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Text string `json:"text"`
 	}
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	longestSubstring := app.LongestSubstring(input.Text)
-	err = app.writeJSON(w, http.StatusOK, envelope{"Result": longestSubstring}, nil)
+	longestSubstring := app.longestSubstring(input.Text)
+	err = app.writeJSON(w, http.StatusOK, helpers.Envelope{"Result": longestSubstring}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 }
 
-func (app *application) emailHandler(w http.ResponseWriter, r *http.Request) {
-	// if r.Method != http.MethodPost {
-	// 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-	// 	return
-	// }
+func (app *Application) emailHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Email string
 	}
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
 	emails := app.emailFinder(input.Email)
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"Result": emails}, nil)
+	err = app.writeJSON(w, http.StatusOK, helpers.Envelope{"Result": emails}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 }
 
-func (app *application) addHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addHandler(w http.ResponseWriter, r *http.Request) {
 	i, err := app.readParam(r, "i")
 	if err != nil {
-		http.Error(w, "Internal", 500)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
 	err = app.models.Counter.Add(i)
 	if err != nil {
-		http.Error(w, "Internal", 500)
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 	num, err := app.models.Counter.Get()
 	if err != nil {
-		fmt.Println("error")
+		app.serverErrorResponse(w, r, err)
 		return
 	}
-	err = app.writeJSON(w, http.StatusOK, envelope{"counter": num}, nil)
+	err = app.writeJSON(w, http.StatusOK, helpers.Envelope{"counter": num}, nil)
 	if err != nil {
-		fmt.Println("error")
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
 
-func (app *application) subHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) subHandler(w http.ResponseWriter, r *http.Request) {
 	i, err := app.readParam(r, "i")
 	if err != nil {
-		http.Error(w, "Internal", 500)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 	// ASK IF THE COUNTERS DROPS TO <0
 	// should we check if the counter exists?
 	err = app.models.Counter.Sub(i)
 	if err != nil {
-		http.Error(w, "Internal", 500)
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 	num, err := app.models.Counter.Get()
@@ -86,97 +89,110 @@ func (app *application) subHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error")
 		return
 	}
-	err = app.writeJSON(w, http.StatusOK, envelope{"counter": num}, nil)
+	err = app.writeJSON(w, http.StatusOK, helpers.Envelope{"counter": num}, nil)
 	if err != nil {
 		fmt.Println("error")
 		return
 	}
 }
 
-func (app *application) valHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) valHandler(w http.ResponseWriter, r *http.Request) {
 	counter, err := app.models.Counter.Get()
+	//If the counter is uninitialized, the default value is 0
+
+	// if err != nil {
+	// 	fmt.Println("Counter wasnt initialized")
+	// 	return
+	// }
+	err = app.writeJSON(w, http.StatusOK, helpers.Envelope{"counter": counter}, nil)
 	if err != nil {
-		fmt.Println("Counter wasnt initialized")
-		return
-	}
-	err = app.writeJSON(w, http.StatusOK, envelope{"counter": counter}, nil)
-	if err != nil {
-		fmt.Println("error")
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
 
-func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
-	// var input struct {
-	// 	Name    string `json:"first_name"`
-	// 	Surname string `json:"last_name"`
-	// }
+func (app *Application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := sqlitedb.User{}
 	err := app.readJSON(w, r, &user)
 	if err != nil {
-		http.Error(w, "internal", 500)
-		return
-	}
-	// user := sqlitedb.User{
-	// 	Name:    input.Name,
-	// 	Surname: input.Surname,
-	// }
-	id, err := app.models.Users.Insert(&user)
-	if err != nil {
-		http.Error(w, "error in inserting user", 500)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"Created user id": id}, nil)
+	id, err := app.models.Users.Insert(&user)
 	if err != nil {
-		http.Error(w, "internal", 500)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, helpers.Envelope{"Created user id": id}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
 
-func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readParam(r, "id")
 	if err != nil {
-		http.Error(w, "Internal", 500)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 	user, err := app.models.Users.Get(id)
-
-	app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
 	if err != nil {
-		http.Error(w, "internal", 500)
+		if errors.Is(err, sql.ErrNoRows) {
+			app.errorResponse(w, r, http.StatusBadRequest, "There is no a user with such id")
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	app.writeJSON(w, http.StatusOK, helpers.Envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
 
-func (app *application) putUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) putUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readParam(r, "id")
 	if err != nil {
-		http.Error(w, "Internal", 500)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 	user := sqlitedb.User{}
 	err = app.readJSON(w, r, &user)
 	if err != nil {
-		http.Error(w, "internal", 500)
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 	err = app.models.Users.Update(id, &user)
 	if err != nil {
-		http.Error(w, "internal", 500)
+		app.serverErrorResponse(w, r, err)
 		return
 	}
-	app.writeJSON(w, http.StatusNoContent, nil, nil)
-	// user, err := app.models.Users.Get(id)
+	err = app.writeJSON(w, http.StatusNoContent, nil, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 }
 
-func (app *application) deletetUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deletetUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readParam(r, "id")
 	if err != nil {
-		http.Error(w, "Internal", 500)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
 	err = app.models.Users.Delete(id)
-	app.writeJSON(w, http.StatusNoContent, nil, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	err = app.writeJSON(w, http.StatusNoContent, nil, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 }

@@ -1,6 +1,8 @@
 package redisDB
 
-import "github.com/go-redis/redis"
+import (
+	"github.com/go-redis/redis"
+)
 
 type CounterModel struct {
 	RedisDB *redis.Client
