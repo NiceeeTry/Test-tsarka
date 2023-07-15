@@ -6,15 +6,14 @@ import (
 	"net/http"
 	"os"
 
-	sqlitedb "Alikhan.Aitbayev/internal/sqliteDB"
+	"Alikhan.Aitbayev/Data"
 	"github.com/go-redis/redis"
 )
 
 type application struct {
 	ErrorLog *log.Logger
 	InfoLog  *log.Logger
-	dbRedis  *redis.Client
-	models   sqlitedb.Models
+	models   Data.Models
 }
 
 func NewApplication() (*application, *sql.DB) {
@@ -42,8 +41,7 @@ func NewApplication() (*application, *sql.DB) {
 	return &application{
 		ErrorLog: ErrorLog,
 		InfoLog:  InfoLog,
-		dbRedis:  client,
-		models:   sqlitedb.NewModels(db),
+		models:   Data.NewModels(db, client),
 	}, db
 }
 

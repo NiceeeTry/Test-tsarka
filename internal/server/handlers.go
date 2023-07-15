@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	sqlitedb "Alikhan.Aitbayev/internal/sqliteDB"
+	sqlitedb "Alikhan.Aitbayev/Data/sqliteDB"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -51,8 +51,12 @@ func (app *application) addHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.dbRedis.IncrBy("counter", int64(i)) //check errors
-	num, err := app.dbRedis.Get("counter").Int()
+	err = app.models.Counter.Add(i)
+	if err != nil {
+		http.Error(w, "Internal", 500)
+		return
+	}
+	num, err := app.models.Counter.Get()
 	if err != nil {
 		fmt.Println("error")
 		return
@@ -72,9 +76,12 @@ func (app *application) subHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// ASK IF THE COUNTERS DROPS TO <0
 	// should we check if the counter exists?
-
-	app.dbRedis.DecrBy("counter", int64(i)) //check errors
-	num, err := app.dbRedis.Get("counter").Int()
+	err = app.models.Counter.Sub(i)
+	if err != nil {
+		http.Error(w, "Internal", 500)
+		return
+	}
+	num, err := app.models.Counter.Get()
 	if err != nil {
 		fmt.Println("error")
 		return
@@ -87,7 +94,7 @@ func (app *application) subHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) valHandler(w http.ResponseWriter, r *http.Request) {
-	counter, err := app.dbRedis.Get("counter").Int()
+	counter, err := app.models.Counter.Get()
 	if err != nil {
 		fmt.Println("Counter wasnt initialized")
 		return
