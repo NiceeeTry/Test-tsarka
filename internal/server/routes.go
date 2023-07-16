@@ -9,7 +9,7 @@ import (
 func (app *Application) routes() http.Handler {
 	router := httprouter.New()
 
-	router.HandlerFunc(http.MethodPost, "/rest/substr/find", app.home)
+	router.HandlerFunc(http.MethodPost, "/rest/substr/find", app.substrHandler)
 
 	router.HandlerFunc(http.MethodPost, "/rest/email/check", app.emailHandler)
 
