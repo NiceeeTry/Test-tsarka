@@ -125,7 +125,7 @@ func ReadParam(r *http.Request, paramName string) (int, error) {
 	i, err := strconv.ParseInt(params.ByName(paramName), 10, 64)
 	text := fmt.Sprintf("invalid %s parameter", paramName)
 	if err != nil {
-		return 0, errors.New(text)
+		return -1, errors.New(text)
 	}
 	return int(i), nil
 }
