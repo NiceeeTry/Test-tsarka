@@ -9,7 +9,12 @@ import (
 )
 
 type Models struct {
-	Users   sqlitedb.UserModel
+	Users interface {
+		Insert(user *sqlitedb.User) (int, error)
+		Get(id int) (*sqlitedb.User, error)
+		Update(id int, user *sqlitedb.User) error
+		Delete(id int) error
+	}
 	Counter redisDB.CounterModel
 }
 

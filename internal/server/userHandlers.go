@@ -1,9 +1,8 @@
 package server
 
 import (
-	"database/sql"
-	"errors"
 	"net/http"
+	"strings"
 
 	sqlitedb "Alikhan.Aitbayev/Data/sqliteDB"
 	"Alikhan.Aitbayev/internal/helpers"
@@ -32,14 +31,18 @@ func (app *Application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 func (app *Application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readParam(r, "id")
+	if id < 1 {
+		app.notFoundResponse(w, r)
+		return
+	}
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 	user, err := app.models.Users.Get(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			app.errorResponse(w, r, http.StatusBadRequest, "There is no a user with such id")
+		if strings.Contains(err.Error(), "no records") {
+			app.notFoundResponse(w, r)
 		} else {
 			app.serverErrorResponse(w, r, err)
 		}
@@ -54,6 +57,10 @@ func (app *Application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) putUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readParam(r, "id")
+	if id < 1 {
+		app.notFoundResponse(w, r)
+		return
+	}
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -78,6 +85,10 @@ func (app *Application) putUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) deletetUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readParam(r, "id")
+	if id < 1 {
+		app.notFoundResponse(w, r)
+		return
+	}
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
