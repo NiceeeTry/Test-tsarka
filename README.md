@@ -1,6 +1,8 @@
 
 # Test Task
 
+## Usage
+    `make run`
 
 
 `1. Путь /rest/substr`
