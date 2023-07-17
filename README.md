@@ -2,7 +2,7 @@
 # Test Task
 
 ## Usage
-    `make run`
+    make run
 
 
 `1. Путь /rest/substr`
